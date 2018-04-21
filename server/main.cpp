@@ -4,6 +4,9 @@
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 #define SERVPORT 3030   // 服务器监听端口号
 #define BACKLOG 10  // 最大同时连接请求数
