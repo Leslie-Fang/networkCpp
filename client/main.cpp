@@ -56,7 +56,9 @@ int main(int argc, char *argv[]){
         return 0;
     }
     printf("Connect server success(%s:%u)\n", inet_ntoa(server_addr.sin_addr), ntohs(server_addr.sin_port));
-
+    if(send(sock_fd, "Hello, server I am try to connected!\n", 50, 0) == -1) {
+        perror("send error！");
+    }
     if((recvbytes=recv(sock_fd, buf, MAXDATASIZE, 0)) == -1) {
         perror("recv error！");
         return 0;

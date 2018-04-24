@@ -10,7 +10,7 @@
 
 #define SERVPORT 3030   // 服务器监听端口号
 #define BACKLOG 10  // 最大同时连接请求数
-
+#define MAXDATASIZE 1000
 int main(int argc, char *argv[]) {
     int sock_fd,client_fd;
     int sin_size;
@@ -48,6 +48,14 @@ int main(int argc, char *argv[]) {
         }
         printf("received a connection from %s:%u\n", inet_ntoa(remote_addr.sin_addr), ntohs(remote_addr.sin_port));
         if(!fork()) {   // 子进程代码段，fork返回0表示子进程
+            char buf[MAXDATASIZE];
+            int recvbytes, sendbytes, len;
+            if((recvbytes=recv(client_fd, buf, MAXDATASIZE, 0)) == -1) {
+                perror("recv error！");
+                return 0;
+            }
+            buf[recvbytes] = '\0';
+            printf("Received: %s",buf);
             if(send(client_fd, "Hello, you are connected!\n", 26, 0) == -1) {
                 perror("send error！");
             }
