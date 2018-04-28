@@ -16,6 +16,8 @@ int main(int argc, char *argv[]) {
     int sin_size;
     struct sockaddr_in server_addr;
     struct sockaddr_in remote_addr;
+    char buf[MAXDATASIZE];
+    int recvbytes;
     //create the socket
     if((sock_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
         perror("Create Server socket error！");
@@ -48,8 +50,6 @@ int main(int argc, char *argv[]) {
         }
         printf("received a connection from %s:%u\n", inet_ntoa(remote_addr.sin_addr), ntohs(remote_addr.sin_port));
         if(!fork()) {   // 子进程代码段，fork返回0表示子进程
-            char buf[MAXDATASIZE];
-            int recvbytes, sendbytes, len;
             if((recvbytes=recv(client_fd, buf, MAXDATASIZE, 0)) == -1) {
                 perror("recv error！");
                 return 0;
