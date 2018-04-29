@@ -51,11 +51,13 @@ int main(int argc, char *argv[]){
     // while(0 != connect(sock_fd, (struct sockaddr *)&server_addr, sizeof(sockaddr))) {
     //  usleep(100*1000);
     // }
+    //第一次触发epoll_wait
     if(connect(sock_fd, (struct sockaddr *)&server_addr, sizeof(struct sockaddr)) == -1) {
         perror("connect error！");
         return 0;
     }
     printf("Connect server success(%s:%u)\n", inet_ntoa(server_addr.sin_addr), ntohs(server_addr.sin_port));
+    //第二次触发epoll_wait
     if(send(sock_fd, "Hello, server I am try to connected!\n", 50, 0) == -1) {
         perror("send error！");
     }
@@ -65,6 +67,7 @@ int main(int argc, char *argv[]){
     }
     buf[recvbytes] = '\0';
     printf("Received: %s",buf);
+    //第三次触发epoll_wait，close socket也会触发
     close(sock_fd);
     return 0;
 }

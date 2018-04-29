@@ -64,5 +64,6 @@ int main(int argc, char *argv[]) {
         }
         close(client_fd);
     }
+    close(sock_fd);
     return 0;
 }

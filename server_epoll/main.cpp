@@ -80,13 +80,15 @@ int main(int argc, char *argv[]){
     cur_fds++;
     int count = 0;
     while(1){
-        if( ( ret_number = epoll_wait( epoll_fd, evs, MAX_LISTEN_EVENT, -1 ) ) == -1 )
+        //注意:这里某个socket断开连接的时候，也会唤醒epoll_wait，并进入EPOLLIN事件，只是读取时返回的大小为0，此时在socket端应该删除监听
+        if( ( ret_number = epoll_wait(epoll_fd, evs, MAX_LISTEN_EVENT, -1 ) ) == -1 )
         {
             printf( "Epoll Wait Error : %d\n", errno );
             exit( EXIT_FAILURE );
         }
         count++;
         printf("loop count %d\n", count);
+        printf("wake up events %d\n", ret_number);
         for(int i = 0; i < ret_number; i++ ){
             if( evs[i].data.fd == sock_fd && cur_fds<MAXEPOLL){
                 //监听到有socket请求连接，accept并创建连接，设置新连接到epoll的监听中
@@ -106,7 +108,7 @@ int main(int argc, char *argv[]){
                     exit( EXIT_FAILURE );
                 }
                 cur_fds++;
-            }else if(evs[i].events&EPOLLIN){
+            }else if(evs[i].events & EPOLLIN){
                 //读事件
                 if((client_fd=evs[i].data.fd)<0){
                     printf("read socket Error : %d\n", errno);
@@ -114,18 +116,21 @@ int main(int argc, char *argv[]){
                 }
                 if((recvbytes=recv(client_fd, buf, MAXDATASIZE, 0)) == -1) {
                     perror("recv error！");
+                }else if(recvbytes == 0){
+                    //结束与当前socket的通信
+                    //注意:这里某个socket断开连接的时候，也会唤醒epoll_wait，并进入EPOLLIN事件，只是读取时返回的大小为0，此时在socket端应该删除监听
+                    printf("Close connected socket.\n");
+                    close(client_fd);
+                    epoll_ctl( epoll_fd, EPOLL_CTL_DEL, evs[i].data.fd, &ev );
+                    cur_fds--;
                 }else{
                     buf[recvbytes] = '\0';
                     printf("Received: %s",buf);
                     //write data back
-                    if(send(client_fd, "Hello, you are connected!\n", 26, 0) == -1) {
+                    if(send(client_fd, "Hello, received your message!\n", 30, 0) == -1) {
                         perror("send error！");
                     }
                 }
-                //结束与当前socket的通信
-                close(client_fd);
-                epoll_ctl( epoll_fd, EPOLL_CTL_DEL, evs[i].data.fd, &ev );
-                cur_fds--;
             }
             //todo::添加并尝试写事件
         }
