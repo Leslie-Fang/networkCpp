@@ -16,7 +16,7 @@
 
 #define MAXEPOLL    10000   /* 对于服务器来说，这个值可以很大的！ */
 #define SERVPORT 3030   // 服务器监听端口号
-#define BACKLOG 10  // 最大同时连接请求数
+#define BACKLOG 20  // 最大同时连接请求数
 #define MAXDATASIZE 1000
 #define MAX_LISTEN_EVENT 100
 
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]){
     int count = 0;
     while(1){
         //注意:这里某个socket断开连接的时候，也会唤醒epoll_wait，并进入EPOLLIN事件，只是读取时返回的大小为0，此时在socket端应该删除监听
-        if( ( ret_number = epoll_wait(epoll_fd, evs, MAX_LISTEN_EVENT, -1 ) ) == -1 )
+        if((ret_number = epoll_wait(epoll_fd, evs, MAX_LISTEN_EVENT, -1 )) == -1 )
         {
             printf( "Epoll Wait Error : %d\n", errno );
             exit( EXIT_FAILURE );
