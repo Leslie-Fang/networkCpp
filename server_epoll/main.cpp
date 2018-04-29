@@ -90,7 +90,7 @@ int main(int argc, char *argv[]){
         printf("loop count %d\n", count);
         printf("wake up events %d\n", ret_number);
         for(int i = 0; i < ret_number; i++ ){
-            if( evs[i].data.fd == sock_fd && cur_fds<MAXEPOLL){
+            if(evs[i].data.fd == sock_fd && cur_fds<MAXEPOLL){
                 //监听到有socket请求连接，accept并创建连接，设置新连接到epoll的监听中
                 sin_size = sizeof(struct sockaddr_in);
                 if( ( client_fd = accept( sock_fd, (struct sockaddr *)&remote_addr, (socklen_t*)&sin_size) ) == -1 )
