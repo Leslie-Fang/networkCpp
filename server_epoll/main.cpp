@@ -92,33 +92,77 @@ int main(int argc, char *argv[]){
         for(int i = 0; i < ret_number; i++ ){
             if(evs[i].data.fd == sock_fd && cur_fds<MAXEPOLL){
                 //监听到有socket请求连接，accept并创建连接，设置新连接到epoll的监听中
+                //这里while循环很重要，因为对epoll使用了ET(边沿触发的模式),监听着的sock_fd，如果在一次事件中，有多个客户端请求连接需要处理，不使用while循环只会处理一次，导致丢失accept的事件
+                //用while循环可以处理完所有的connect请求,但是一定要把监听的socket设置为非阻塞模式，否则最后会等待新的请求而阻塞在这里
                 sin_size = sizeof(struct sockaddr_in);
-                if( ( client_fd = accept( sock_fd, (struct sockaddr *)&remote_addr, (socklen_t*)&sin_size) ) == -1 )
-                {
-                    printf("Accept Error : %d\n", errno);
-                    exit( EXIT_FAILURE );
+                while((client_fd = accept( sock_fd, (struct sockaddr *)&remote_addr, (socklen_t*)&sin_size) ) != -1 ){
+                    printf("accept a new connection!\n");
+                    setnonblocking(client_fd);
+                    ev.events = EPOLLIN | EPOLLET;      //!> accept Read!
+                    ev.data.fd = client_fd;                   //!> 将conn_fd 加入
+                    if( epoll_ctl( epoll_fd, EPOLL_CTL_ADD, client_fd, &ev ) < 0 ){
+                        printf("Epoll Error : %d\n", errno);
+                        exit( EXIT_FAILURE );
+                    }
+                    cur_fds++;
                 }
-                printf("accept a new connection!\n");
-                setnonblocking(client_fd);
-                ev.events = EPOLLIN | EPOLLET;      //!> accept Read!
-                ev.data.fd = client_fd;                   //!> 将conn_fd 加入
-                if( epoll_ctl( epoll_fd, EPOLL_CTL_ADD, client_fd, &ev ) < 0 )
-                {
-                    printf("Epoll Error : %d\n", errno);
-                    exit( EXIT_FAILURE );
-                }
-                cur_fds++;
+
+//                if( (client_fd = accept( sock_fd, (struct sockaddr *)&remote_addr, (socklen_t*)&sin_size) ) == -1 )
+//                {
+//                    printf("Accept Error : %d\n", errno);
+//                    exit( EXIT_FAILURE );
+//                }
+//                printf("accept a new connection!\n");
+//                setnonblocking(client_fd);
+//                ev.events = EPOLLIN | EPOLLET;      //!> accept Read!
+//                ev.data.fd = client_fd;                   //!> 将conn_fd 加入
+//                if( epoll_ctl( epoll_fd, EPOLL_CTL_ADD, client_fd, &ev ) < 0 )
+//                {
+//                    printf("Epoll Error : %d\n", errno);
+//                    exit( EXIT_FAILURE );
+//                }
+//                cur_fds++;
             }else if(evs[i].events & EPOLLIN){
                 //读事件
                 if((client_fd=evs[i].data.fd)<0){
                     printf("read socket Error : %d\n", errno);
                     continue;
                 }
+
+//                //因为使用边沿触发的模式，需要在一次epoll事件中将所有数据读完，否则在下一个epoll事件中，不会包含上一个epoll事件中没读完的数据的event
+//                //这是边沿触发，如果是水平触发，则在下一个epoll事情中，会去处理上一个epoll事情中没处理完的event
+//                int buffer_space_count=0;
+//                while((recvbytes=recv(client_fd, buf+buffer_space_count, MAXDATASIZE, 0)) > 0){
+//                    buffer_space_count += recvbytes;
+//                    if(buffer_space_count >= MAXDATASIZE-1){
+//                        printf("buffer is out of space.\n");
+//                        //todo::solve the recv buufer is out of space error
+//                        break;
+//                    }
+//                }
+//                if (recvbytes == -1 && errno != EAGAIN)
+//                {
+//                    perror("recv error");
+//                }
+//                //todo: don;t know why, 但是这里最终退出的状态就是recvbytes == -1 && errno == EAGAIN
+//                //结束与当前socket的通信
+//                buf[buffer_space_count] = '\0';
+//                printf("Received: %s",buf);
+//                //write data back
+//                if(send(client_fd, "Hello, received your message!\n", 30, 0) == -1) {
+//                    perror("send error！");
+//                }
+//                printf("Close connected socket.\n");
+//                close(client_fd);
+//                epoll_ctl( epoll_fd, EPOLL_CTL_DEL, evs[i].data.fd, &ev );
+//                cur_fds--;
                 if((recvbytes=recv(client_fd, buf, MAXDATASIZE, 0)) == -1) {
                     perror("recv error！");
                 }else if(recvbytes == 0){
                     //结束与当前socket的通信
                     //注意:这里某个socket断开连接的时候，也会唤醒epoll_wait，并进入EPOLLIN事件，只是读取时返回的大小为0，此时在socket端应该删除监听
+                    //https://blog.csdn.net/yongqingjiao/article/details/78819791
+                    //客户端调用 close()），在服务器端会触发一个 epoll 事件。在低于 2.6.17 版本的内核中，这个 epoll 事件一般是 EPOLLIN
                     printf("Close connected socket.\n");
                     close(client_fd);
                     epoll_ctl( epoll_fd, EPOLL_CTL_DEL, evs[i].data.fd, &ev );

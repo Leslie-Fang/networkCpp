@@ -13,11 +13,14 @@
 #include <sys/socket.h>
 #include <sys/shm.h>
 #include <time.h>
+#include <fcntl.h>
 #define MAXDATASIZE 1000
 int trySocket(in_addr_t server_ip,in_port_t server_port,in_addr_t my_ip,in_port_t my_port);
+int setnonblocking( int fd );
 int main(int argc, char *argv[]){
     pid_t fpid;
     int number_pid = 10;
+    int subpid[number_pid];
     in_addr_t server_ip = inet_addr(argv[1]);
     in_port_t server_port = atoi(argv[2]);
     in_addr_t my_ip = inet_addr(argv[3]);
@@ -35,9 +38,10 @@ int main(int argc, char *argv[]){
         }else if(fpid == 0){
             printf("son\n");
             //* count = (* count) + 1;
-            break;//这个break很重要，这里一共创建了3个进程
+            break;//这个break很重要，这里一共创建了number_pid个子进程，一共number_pid+1个进程发起socket连接的请求
         }else{
-            printf("father\n");
+            subpid[i] = fpid;
+            printf("father %d\n",i);
         }
     }
     srand(getpid());
@@ -52,7 +56,9 @@ int main(int argc, char *argv[]){
     }
     //最原始的父进程
     int status = -1;
-    wait(&status);
+    for(int i=0;i<number_pid;i++){
+        waitpid(subpid[i],&status,0);
+    }
     printf("end\n");
     exit(0);
 }
@@ -76,9 +82,13 @@ int trySocket(in_addr_t server_ip,in_port_t server_port,in_addr_t my_ip,in_port_
     my_addr.sin_addr.s_addr = my_ip;
     my_addr.sin_family = AF_INET;
     my_addr.sin_port = htons(my_port);
+    //有时候connect函数会超时，设置为非阻塞的IO
+    //todo::设置为非阻塞IO有问题，在connect之后需要判断一下:https://bbs.csdn.net/topics/230007709
+    //setnonblocking(sock_fd);
 
     if (bind(sock_fd, (sockaddr*)&my_addr, sizeof(sockaddr)) < 0) {
         perror("bind error");
+        close(sock_fd);
         return -1;
     }
     //printf("Try to connect server(%s:%u)\n", inet_ntoa(server_addr.sin_addr), ntohs(server_addr.sin_port));
@@ -88,18 +98,21 @@ int trySocket(in_addr_t server_ip,in_port_t server_port,in_addr_t my_ip,in_port_
     server_addr.sin_addr.s_addr = server_ip;
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(server_port);
-    if(connect(sock_fd, (struct sockaddr *)&server_addr, sizeof(struct sockaddr)) == -1) {
+    if(connect(sock_fd, (struct sockaddr *)&server_addr, sizeof(struct sockaddr)) != 0) {
         perror("connect error！");
+        close(sock_fd);
         return -1;
     }
     printf("Connect server success(%s:%u)\n", inet_ntoa(server_addr.sin_addr), ntohs(server_addr.sin_port));
     //sleep(10);
     if(send(sock_fd, "Hello, server I am try to connected!\n", 50, 0) == -1) {
         perror("send error！");
+        close(sock_fd);
         return -1;
     }
     if((recvbytes=recv(sock_fd, buf, MAXDATASIZE, 0)) == -1) {
         perror("recv error！");
+        close(sock_fd);
         return -1;
     }
     buf[recvbytes] = '\0';
@@ -107,6 +120,15 @@ int trySocket(in_addr_t server_ip,in_port_t server_port,in_addr_t my_ip,in_port_
     close(sock_fd);
     return 0;
 
+}
+int setnonblocking( int fd )
+{
+    if( fcntl( fd, F_SETFL, fcntl( fd, F_GETFD, 0 )|O_NONBLOCK ) == -1 )
+    {
+        printf("Set blocking error : %d\n", errno);
+        return -1;
+    }
+    return 0;
 }
 
 
