@@ -1,6 +1,12 @@
-main: main.o
-	g++ -o main main.o
+CC=g++
+CFLAGS = -g -Wall
+HEADER=-I./include
+
+main: main.o command.o
+	$(CC) -o main main.o command.o
 main.o: main.cpp
-	g++ -c main.cpp
+	$(CC) -o main.o $(CFLAGS) $(HEADER) -c main.cpp
+command.o: ./src/command.cpp
+	$(CC) -o command.o $(CFLAGS) $(HEADER) -c ./src/command.cpp
 clean:
 	rm main *.o

@@ -15,6 +15,8 @@
 int main(int argc, char *argv[]){
     int sock_fd = -1;
     char buf[MAXDATASIZE];
+    char input[MAXINPUT];
+    int inputLength;
     int recvbytes, sendbytes, len;
     if (argc != 5) {
         printf("Input format error\n");
@@ -58,8 +60,6 @@ int main(int argc, char *argv[]){
     }
     printf("Connect server success(%s:%u)\n", inet_ntoa(server_addr.sin_addr), ntohs(server_addr.sin_port));
     //第二次触发epoll_wait
-    char input[MAXINPUT];
-    int inputLength;
     while(1){
         memset(input, '0', sizeof(input));
         memset(buf, '0', sizeof(buf));
@@ -68,8 +68,8 @@ int main(int argc, char *argv[]){
             printf("Input command error.\n");
             break;
         }
-        //printf("your input command is: %s, length:%d\n",input,strlen(input));
         inputLength = strlen(input);
+        //printf("your input command is: %s, length:%d\n",input,inputLength);
         char * sendBuf = new char[inputLength+1];
         strcpy(sendBuf,input);
         //printf("your input command is: %s, length:%d\n",sendBuf,strlen(sendBuf));

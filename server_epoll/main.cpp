@@ -13,6 +13,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include "command.h"
 
 #define MAXEPOLL    10000   /* 对于服务器来说，这个值可以很大的！ */
 #define SERVPORT 3030   // 服务器监听端口号
@@ -33,6 +34,9 @@ int setnonblocking( int fd )
 
 int main(int argc, char *argv[]){
     //std::cout<<"Hello!"<<std::endl;
+//    test * mytest = new test;
+//    mytest->a = 100;
+//    std::cout<<mytest->a<<std::endl;
     int sock_fd,client_fd;
     int epoll_fd;
     int ret_number;
@@ -168,8 +172,9 @@ int main(int argc, char *argv[]){
                     epoll_ctl( epoll_fd, EPOLL_CTL_DEL, evs[i].data.fd, &ev );
                     cur_fds--;
                 }else{
+                    printf("Received: %d numbers input char\n",recvbytes);//client输入的换行符这里也有收到
                     buf[recvbytes] = '\0';
-                    printf("Received: %s",buf);
+                    printf("Received: %s",buf);//比如client输入'a',这里buf一共3个字符,'a''\n''\0'
                     //write data back
                     if(send(client_fd, "Hello, received your message!\n", 30, 0) == -1) {
                         perror("send error！");
