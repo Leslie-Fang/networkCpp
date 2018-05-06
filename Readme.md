@@ -21,8 +21,10 @@ nc 47.91.245.251 3030
 
 
 ## todo
-* 修改epoll_server 的makefile文件
-* 在服务器和客户端添加一个命令的构造器，支持redis支持的5种命令
+* Done: 修改epoll_server 的makefile文件
+* Ongoing:在服务器和客户端添加一个命令的构造器，定义客户端和服务器端通讯的协议，支持set和delete
+下一步: 把服务器端的ParseCommand 函数写完，生成command
+
 * 在epoll服务器前端添加一个 消息队列，并使用令牌桶算法(Token Bucket)限制流量
 
 

@@ -1,5 +1,5 @@
 //
-// Created by leslie-fang on 2018/5/2.
+// Created by leslie-fang on 2018/5/6.
 //
 
 #ifndef NETWORKCPP_COMMAND_H
@@ -17,7 +17,7 @@ struct commands{
     char * command;
     char * arguments;
 };
-bool ParseCommand(commands & myCommand, char * raw_command);//parse the commands from remote client/server
+bool ParseCommand(char * raw_command);//parse the commands from remote client/server
 void GenerateCommand(commands & myCommand,char * buf,int inputLength);//encode the commands into the required format
 void ParseInput(commands & myCommand, char * raw_command); //parse the input of user from the session
 void newCommand(commands & myCommand,char * raw_command);

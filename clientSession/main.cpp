@@ -10,6 +10,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/socket.h>
+#include "command.h"
+
 #define MAXDATASIZE 1000
 #define MAXINPUT 1000
 int main(int argc, char *argv[]){
@@ -17,7 +19,8 @@ int main(int argc, char *argv[]){
     char buf[MAXDATASIZE];
     char input[MAXINPUT];
     int inputLength;
-    int recvbytes, sendbytes, len;
+    int recvbytes;
+    commands myCommands;//input commands
     if (argc != 5) {
         printf("Input format error\n");
         return 0;
@@ -67,13 +70,26 @@ int main(int argc, char *argv[]){
         if (gets(input) == NULL){
             printf("Input command error.\n");
             break;
-        }
-        inputLength = strlen(input);
+        }//gets会自动把session输入的换行符转化为'\0'
+        newCommand(myCommands,input);
+        ParseInput(myCommands,input);
+
+//        std::cout<<myCommands.command<<std::endl;
+//        std::cout<<strlen(myCommands.command)<<std::endl;
+//        std::cout<<myCommands.arguments<<std::endl;
+//        std::cout<<strlen(myCommands.arguments)<<std::endl;
+//        freeCommand(myCommands);
+//        break;
+
+        inputLength = 3+strlen(myCommands.command)+3+strlen(myCommands.arguments)+3+2+3;
         //printf("your input command is: %s, length:%d\n",input,inputLength);
         char * sendBuf = new char[inputLength+1];
-        strcpy(sendBuf,input);
+        //strcpy(sendBuf,input);
         //printf("your input command is: %s, length:%d\n",sendBuf,strlen(sendBuf));
+        GenerateCommand(myCommands,sendBuf,inputLength);
         sendBuf[inputLength] = '\n';
+
+
         if(send(sock_fd, sendBuf, inputLength+1, 0) == -1) {
             perror("send error！");
         }
@@ -84,9 +100,10 @@ int main(int argc, char *argv[]){
         buf[recvbytes] = '\0';
         printf("Received: %s",buf);
         delete [] sendBuf;
+        freeCommand(myCommands);
     }
     close(sock_fd);
     return 0;
-
 }
+
 

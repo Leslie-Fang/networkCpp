@@ -6,20 +6,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "command.h"
-#include <iostream>
 
-bool ParseCommand(commands & myCommand, char * raw_command){
-    int length = strlen(raw_command);
-    short crc_result = crc16(raw_command,length-5);
-    short crc_sent;
-    memcpy(&crc_sent, raw_command + length-5, 2);
-    std::cout<<crc_result<<std::endl;
-    std::cout<<crc_sent<<std::endl;
-    if(crc_sent != crc_result){
-        //printf("data error in communication!\n");
-        return false;
-    }
-
+bool ParseCommand(char * raw_command){
     return true;
 }
 

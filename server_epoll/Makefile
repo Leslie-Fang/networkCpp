@@ -1,12 +1,16 @@
 CC=g++
 CFLAGS = -g -Wall
+VPATH = .:src:include
 HEADER=-I./include
 
-main: main.o command.o
-	$(CC) -o main main.o command.o
-main.o: main.cpp
+objects = main.o command.o
+main: $(objects)
+	$(CC) -o main $(objects)
+main.o: main.cpp command.h
 	$(CC) -o main.o $(CFLAGS) $(HEADER) -c main.cpp
-command.o: ./src/command.cpp
+command.o: command.cpp command.h
 	$(CC) -o command.o $(CFLAGS) $(HEADER) -c ./src/command.cpp
+
+.PHONY : clean
 clean:
-	rm main *.o
+	rm main $(objects)

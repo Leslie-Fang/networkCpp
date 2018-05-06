@@ -173,8 +173,16 @@ int main(int argc, char *argv[]){
                     cur_fds--;
                 }else{
                     printf("Received: %d numbers input char\n",recvbytes);//client输入的换行符这里也有收到
-                    buf[recvbytes] = '\0';
-                    printf("Received: %s",buf);//比如client输入'a',这里buf一共3个字符,'a''\n''\0'
+                    buf[recvbytes-1] = '\0'; //把接收到的最后一个回车符\n换成\0
+                    if( !ParseCommand(buf)){
+                        printf("data error in communication!\n");
+                        if(send(client_fd, "Error due to Comm!\n", 30, 0) == -1) {
+                            perror("send error！");
+                        }
+                        continue;
+                    }
+
+                    printf("Received: %s\n",buf);//比如client输入'a',这里buf一共3个字符,'a''\n''\0'
                     //write data back
                     if(send(client_fd, "Hello, received your message!\n", 30, 0) == -1) {
                         perror("send error！");
